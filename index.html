@@ -75,7 +75,14 @@
 </head>
 <body>
   <h1>📘 WGU: D089 Principles of Economics OA Exam Quiz 📘</h1>
-  <div id="quiz"></div>
+  
+  <div id="start-container" style="text-align:center; margin-top: 50px;">
+    <button id="start-button" style="background-color:#003058;color:white;padding:12px 24px;font-size:1.2rem;border:none;border-radius:8px;cursor:pointer;box-shadow:2px 2px 6px rgba(0,0,0,0.2);">
+      Start Exam
+    </button>
+  </div>
+
+  <div id="quiz" style="display:none;"></div>
   <div class="progress-container">
     <p>Score: <span id="score">0</span>/250 (<span id="percent">0</span>%)</p>
     <div class="progress-bar">
@@ -84,7 +91,18 @@
   </div>
 
   <script>
-    const quizData = fetch('quiz-data.json')
+    
+document.getElementById("start-button").addEventListener("click", function() {
+  document.getElementById("start-container").style.display = "none";
+  document.getElementById("quiz").style.display = "block";
+  fetch('quiz-data.json')
+    .then(response => response.json())
+    .then(data => initializeQuiz(data))
+    .catch(error => console.error('Error loading quiz data:', error));
+});
+
+
+// const quizData = fetch('quiz-data.json')
       .then(response => response.json())
       .then(data => initializeQuiz(data))
       .catch(error => console.error('Error loading quiz data:', error));
