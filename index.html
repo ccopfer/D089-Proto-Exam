@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WGU: D089 Principles of Economics OA Exam Quiz</title>
   <style>
-    body {
+    html {
+  scroll-behavior: smooth;
+}
+
+body {
       font-family: Futura, 'Trebuchet MS', Arial, sans-serif;
       background-color: #f4f6f9;
       padding: 20px;
@@ -96,24 +100,20 @@
       box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
     }
     .section {
-      padding-bottom: 160px; /* extra bottom padding so last question isn't hidden */
+      padding-bottom: 160px;
     }
   </style>
 </head>
 <body>
   <h1>📘 WGU: D089 Principles of Economics OA Exam Quiz 📘</h1>
-  
   <div id="start-container" style="text-align:center; margin-top: 50px;">
-    <button id="start-button" style="background-color:#003058;color:white;padding:12px 24px;font-size:1.2rem;border:none;border-radius:8px;cursor:pointer;box-shadow:2px 2px 6px rgba(0,0,0,0.2);">
-      Start Exam
-    </button>
+    <button id="start-button" style="background-color:#003058;color:white;padding:12px 24px;font-size:1.2rem;border:none;border-radius:8px;cursor:pointer;box-shadow:2px 2px 6px rgba(0,0,0,0.2);">Start Exam</button>
   </div>
-
   <div id="quiz" style="display:none;"></div>
   <div class="progress-container" id="progress-container">
     <div class="progress-flex">
       <div style="flex:1">
-        <p>Score: <span id="score">0</span>/250 (<span id="percent">0</span>%)</p>
+        <p>Section Score: <span id="sectionScore">0</span>/50 (<span id="sectionPercent">0</span>%) | Total Score: <span id="score">0</span>/250 (<span id="percent">0</span>%)</p>
         <div class="progress-bar">
           <div class="progress-fill" id="progress-fill"></div>
         </div>
@@ -124,9 +124,9 @@
       </div>
     </div>
   </div>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  
   const startBtn = document.getElementById("start-button");
   const prevBtn = document.getElementById("prev-button");
   const nextBtn = document.getElementById("next-button");
@@ -136,10 +136,29 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("start-container").style.display = "none";
       document.getElementById("quiz").style.display = "block";
       document.getElementById("progress-container").style.display = "block";
+      const start = 0;
+      const end = 50;
+    let sectionCorrect = 0;
+    for (let i = start; i < end; i++) {
+      const selected = document.querySelector(`input[name='question${i}']:checked`);
+      if (selected && quizData && quizData[i] && Array.isArray(quizData[i].choices) && quizData[i].choices[selected.value] === quizData[i].correct) {
+        sectionCorrect++;
+      }
+    }
+    document.getElementById("sectionScore").innerText = sectionCorrect;
+    document.getElementById("sectionPercent").innerText = Math.round((sectionCorrect / 50) * 100);
+
       fetch('quiz-data.json')
         .then(response => response.json())
-        .then(data => initializeQuiz(data))
-        .catch(error => console.error('Error loading quiz data:', error));
+        .then(data => {
+          initializeQuiz(data);
+          showSection(0);
+                    
+        })
+        .catch(error => {
+          console.error('Error loading quiz data:', error);
+          document.getElementById("quiz").innerHTML = "<p style='color:red;'>Failed to load quiz-data.json. Please ensure it exists in the same directory as index.html.</p>";
+        });
     });
   }
 
@@ -154,6 +173,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.initializeQuiz = function(quizData) {
+    window.quizData = quizData;
+    if (!Array.isArray(quizData) || quizData.length < 250) {
+      document.getElementById("quiz").innerHTML = "<p style='color:red;'>Error: quiz-data.json must contain at least 250 questions.</p>";
+      return;
+    }
     shuffleArray(quizData);
     const quizContainer = document.getElementById("quiz");
     quizContainer.innerHTML = "";
@@ -209,24 +233,165 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       quizContainer.appendChild(sectionDiv);
+
+    const reviewDiv = document.createElement("div");
+    reviewDiv.className = "section";
+    reviewDiv.id = `review${section}`;
+    reviewDiv.style.display = "none";
+
+    const reviewHeader = document.createElement("h2");
+    reviewHeader.innerText = `Section ${section + 1} Review`;
+    reviewDiv.appendChild(reviewHeader);
+
+    const scoreSummary = document.createElement("p");
+    scoreSummary.innerHTML = `Section Score: <span id='reviewSectionScore${section}'>0</span>/50 (<span id='reviewPercentScore${section}'>0</span>%) | Total Score: <span id='reviewTotalScore${section}'>0</span>/250`;
+    reviewDiv.appendChild(scoreSummary);
+
+    for (let i = start; i < end; i++) {
+      const q = quizData[i];
+      let userAnswer = '';
+      let userAnswerIndex = null;
+      const inputs = document.getElementsByName(`question${i}`);
+      inputs.forEach(input => {
+        if (input.checked) {
+          userAnswerIndex = parseInt(input.value);
+          if (quizData[i] && Array.isArray(quizData[i].choices)) {
+            userAnswer = quizData[i].choices[userAnswerIndex];
+          }
+        }
+      });
+
+      const qReview = document.createElement("div");
+      qReview.className = "question";
+
+      const qText = document.createElement("p");
+      qText.innerHTML = `<strong>Q${i + 1}:</strong> ${q.question}`;
+      qReview.appendChild(qText);
+
+      const selectedAnswerP = document.createElement("p");
+      selectedAnswerP.innerHTML = `<strong>Selected Answer:</strong> ${userAnswer}`;
+      if (userAnswerIndex !== null && quizData[i] && Array.isArray(quizData[i].choices) && quizData[i].choices[userAnswerIndex] !== q.correct) {
+        selectedAnswerP.style.color = "red";
+        selectedAnswerP.style.fontWeight = "bold";
+      } else if (userAnswerIndex !== null && quizData[i] && Array.isArray(quizData[i].choices)) {
+          selectedAnswerP.style.color = "black";
+        selectedAnswerP.style.fontWeight = "bold";
+      }
+      qReview.appendChild(selectedAnswerP);
+
+      const correct = document.createElement("p");
+      correct.innerHTML = `<strong>Correct Answer:</strong> ${q.correct}`;
+      if (userAnswerIndex !== null && quizData[i].choices[userAnswerIndex] !== q.correct) {
+        correct.style.color = "green";
+        correct.style.fontWeight = "bold";
+      }
+      qReview.appendChild(correct);
+
+      const explanation = document.createElement("p");
+      explanation.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
+      qReview.appendChild(explanation);
+
+      
+
+      reviewDiv.appendChild(qReview);
     }
 
-    showSection(0);
+    const printBtn = document.createElement("button");
+    printBtn.innerText = "Print Section Review";
+    printBtn.style = "background-color:#003058;color:white;padding:8px 16px;border:none;border-radius:6px;margin:20px auto;display:block;cursor:pointer;";
+    printBtn.onclick = () => window.print();
+    reviewDiv.appendChild(printBtn);
+
+    const continueBtn = document.createElement("button");
+    continueBtn.innerText = "Continue to Next Section";
+    continueBtn.style = "background-color:#003058;color:white;padding:8px 16px;border:none;border-radius:6px;margin:20px auto;display:block;cursor:pointer;";
+    continueBtn.onclick = () => {
+      const sectionStart = section * 50;
+      const sectionEnd = sectionStart + 50;
+      let sectionCorrect = 0;
+      for (let i = sectionStart; i < sectionEnd; i++) {
+        const selected = document.querySelector(`input[name='question${i}']:checked`);
+        if (selected && quizData[i].choices[selected.value] === quizData[i].correct) {
+          sectionCorrect++;
+        }
+      }
+      const sectionPercent = Math.round((sectionCorrect / 50) * 100);
+      document.getElementById(`reviewSectionScore${section}`).innerText = sectionCorrect;
+      document.getElementById(`reviewPercentScore${section}`).innerText = sectionPercent;
+      document.getElementById(`reviewTotalScore${section}`).innerText = score;
+      showSection(section + 1);
+    };
+    reviewDiv.appendChild(continueBtn);
+
+    quizContainer.appendChild(reviewDiv);
+    }
+
     updateNavButtons();
   };
 
   function showSection(index) {
+    if (window.quizData && Number.isInteger(index) && document.getElementById(`review${index}`)) {
+      const section = index;
+      const start = section * 50;
+      const end = start + 50;
+      let sectionCorrect = 0;
+      for (let i = start; i < end; i++) {
+        const inputs = document.getElementsByName(`question${i}`);
+        let userAnswerIndex = null;
+        let userAnswer = '';
+        inputs.forEach(input => {
+          if (input.checked) {
+            userAnswerIndex = parseInt(input.value);
+            userAnswer = quizData[i].choices[userAnswerIndex];
+          }
+        });
+        const selectedP = document.querySelector(`#review${section} .question:nth-of-type(${i - start + 1}) p:nth-of-type(2)`);
+        if (selectedP) {
+          selectedP.innerHTML = `<strong>Selected Answer:</strong> ${userAnswer}`;
+          if (userAnswerIndex !== null && quizData[i].choices[userAnswerIndex] !== quizData[i].correct) {
+            selectedP.style.color = "red";
+            selectedP.style.fontWeight = "bold";
+          } else {
+            selectedP.style.color = "black";
+            selectedP.style.fontWeight = "bold";
+          }
+        }
+      }
+      const sectionPercent = Math.round((sectionCorrect / 50) * 100);
+      document.getElementById(`reviewSectionScore${index}`).innerText = sectionCorrect;
+      document.getElementById(`reviewPercentScore${index}`).innerText = sectionPercent;
+      document.getElementById(`reviewTotalScore${index}`).innerText = score;
+    }
+    window.scrollTo(0, 0);
+    const isReview = document.getElementById(`review${index}`);
+    const sectionCheck = document.getElementById(`section${index}`);
+    const progressBar = document.getElementById("progress-container");
+    progressBar.style.display = "block";
+    const start = index * 50;
+    const end = start + 50;
+    let sectionCorrect = 0;
+    for (let i = start; i < end; i++) {
+      const selected = document.querySelector(`input[name='question${i}']:checked`);
+      if (selected && quizData[i].choices[selected.value] === quizData[i].correct) {
+        sectionCorrect++;
+      }
+    }
+    document.getElementById("sectionScore").innerText = sectionCorrect;
+    document.getElementById("sectionPercent").innerText = Math.round((sectionCorrect / 50) * 100);
     const sections = document.querySelectorAll(".section");
     if (index < 0 || index >= sections.length) return;
+
+    
     sections.forEach((sec, i) => {
       sec.style.display = i === index ? "block" : "none";
     });
+
     currentSectionIndex = index;
     window.scrollTo(0, 0);
     updateNavButtons();
   }
 
-  function updateNavButtons() {
+      function updateNavButtons() {
     prevBtn.style.display = currentSectionIndex > 0 ? "inline-block" : "none";
     nextBtn.style.display = currentSectionIndex < 4 ? "inline-block" : "none";
   }
@@ -241,10 +406,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputs = document.getElementsByName(`question${qIndex}`);
     inputs.forEach(input => input.disabled = true);
 
-    const selectedLabel = document.querySelector(`input[name='question${qIndex}']:checked`).parentNode.textContent.trim();
+    const selectedInput = document.querySelector(`input[name='question${qIndex}']:checked`);
+    const selectedChoice = selectedInput ? quizData[qIndex].choices[selectedInput.value] : "";
+    const correct = correctAnswerText.trim();
 
-    if (selectedLabel === correctAnswerText) {
+    if (selectedChoice.trim() === correct) {
       score++;
+      const sectionBase = Math.floor(qIndex / 50) * 50;
+      const sectionCorrect = Array.from({ length: 50 }, (_, i) => {
+        const idx = sectionBase + i;
+        const selected = document.querySelector(`input[name='question${idx}']:checked`);
+        return selected && quizData[idx].choices[selected.value] === quizData[idx].correct;
+      }).filter(Boolean).length;
+      document.getElementById("sectionScore").innerText = sectionCorrect;
+      const sectionPercent = Math.round((sectionCorrect / 50) * 100);
+      document.getElementById("sectionPercent").innerText = sectionPercent;
       feedback.innerHTML = `✅ Correct! 🎉 ${explanation}`;
       feedback.style.color = "green";
     } else {
