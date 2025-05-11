@@ -5,27 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WGU: D089 Principles of Economics OA Exam Quiz</title>
   <style>
-.nav-buttons {
-  position: sticky;
-  bottom: 20px;
-  background-color: #f4f6f9;
-  padding: 15px;
-  text-align: center;
-  z-index: 999;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-}
-.nav-buttons button {
-  background-color: #003058;
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  font-size: 1rem;
-  border-radius: 6px;
-  margin: 0 5px;
-  cursor: pointer;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
-}
-
     body {
       font-family: Futura, 'Trebuchet MS', Arial, sans-serif;
       background-color: #f4f6f9;
@@ -74,9 +53,17 @@
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
       z-index: 1000;
       font-size: 1.1rem;
+      display: none;
+    }
+    .progress-flex {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
     }
     .progress-bar {
-      width: 100%;
+      flex: 1;
+      margin-right: 20px;
       background-color: #dce3ee;
       border: 1px solid #003058;
       border-radius: 8px;
@@ -92,6 +79,16 @@
       line-height: 24px;
       transition: width 0.5s;
     }
+    .progress-nav button {
+      background-color: #003058;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-left: 10px;
+      cursor: pointer;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -104,34 +101,32 @@
   </div>
 
   <div id="quiz" style="display:none;"></div>
-  <div class="progress-container">
-  <div class="nav-buttons" style="margin-bottom: 10px;">
-    <button id="prevBtn">Previous Section</button>
-    <button id="nextBtn">Next Section</button>
-  </div>
-    <p>Score: <span id="score">0</span>/250 (<span id="percent">0</span>%)</p>
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress-fill"></div>
+  <div class="progress-container" id="progress-container">
+    <div class="progress-flex">
+      <div style="flex:1">
+        <p>Score: <span id="score">0</span>/250 (<span id="percent">0</span>%)</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <div class="progress-nav">
+        <button id="prev-button">Previous Section</button>
+        <button id="next-button">Next Section</button>
+      </div>
     </div>
   </div>
 
-  
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
-  // Navigation control
-  document.getElementById("prevBtn").addEventListener("click", () => {
-    if (currentSectionIndex > 0) showSection(currentSectionIndex - 1);
-  });
-  document.getElementById("nextBtn").addEventListener("click", () => {
-    if (currentSectionIndex < 4) showSection(currentSectionIndex + 1);
-  });
-
   const startBtn = document.getElementById("start-button");
+  const prevBtn = document.getElementById("prev-button");
+  const nextBtn = document.getElementById("next-button");
+
   if (startBtn) {
     startBtn.addEventListener("click", function() {
       document.getElementById("start-container").style.display = "none";
       document.getElementById("quiz").style.display = "block";
+      document.getElementById("progress-container").style.display = "block";
       fetch('quiz-data.json')
         .then(response => response.json())
         .then(data => initializeQuiz(data))
@@ -204,37 +199,31 @@ document.addEventListener("DOMContentLoaded", () => {
         sectionDiv.appendChild(questionDiv);
       });
 
-      const navDiv = document.createElement("div");
-      navDiv.style.textAlign = "center";
-      navDiv.style.marginTop = "20px";
-
-      if (section > 0) {
-        const prevBtn = document.createElement("button");
-        prevBtn.innerText = "Previous Section";
-        prevBtn.onclick = () => showSection(section - 1);
-        prevBtn.style.marginRight = "10px";
-        navDiv.appendChild(prevBtn);
-      }
-
-      if (section < sections - 1) {
-        const nextBtn = document.createElement("button");
-        nextBtn.innerText = "Next Section";
-        nextBtn.onclick = () => showSection(section + 1);
-        navDiv.appendChild(nextBtn);
-      }
-
-      sectionDiv.appendChild(navDiv);
       quizContainer.appendChild(sectionDiv);
     }
-  }
+
+    showSection(0);
+    updateNavButtons();
+  };
 
   function showSection(index) {
     const sections = document.querySelectorAll(".section");
+    if (index < 0 || index >= sections.length) return;
     sections.forEach((sec, i) => {
       sec.style.display = i === index ? "block" : "none";
     });
     currentSectionIndex = index;
+    window.scrollTo(0, 0);
+    updateNavButtons();
   }
+
+  function updateNavButtons() {
+    prevBtn.style.display = currentSectionIndex > 0 ? "inline-block" : "none";
+    nextBtn.style.display = currentSectionIndex < 4 ? "inline-block" : "none";
+  }
+
+  prevBtn.addEventListener("click", () => showSection(currentSectionIndex - 1));
+  nextBtn.addEventListener("click", () => showSection(currentSectionIndex + 1));
 
   function handleAnswer(qIndex, selected, correctAnswerText, explanation) {
     const feedback = document.getElementById(`feedback${qIndex}`);
